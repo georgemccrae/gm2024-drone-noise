@@ -26,6 +26,8 @@ class PathPlanner:
         """A-star search"""
         grid_path = []
         first_cell = self.matrix.get_cell(start)
+        if first_cell is None:
+            return []  # Return an empty path if the starting cell is not found
         last_cell = self.matrix.get_cell(end)
         avg_matrix = self.matrix.get_average_matrix(time_count)
         

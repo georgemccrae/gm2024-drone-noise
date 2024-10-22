@@ -181,6 +181,10 @@ class Center:
             f.flush()
             f.close()
         
+        path = RESULT_BASE_PATH + '/' + ("v2_o%d_d%d_p%d_z%d" % (ORDERS, DRONES, PRIORITIZE_P, DRONE_ALTITUTE))
+
+        self.matrix.create_geojson(self.iteration_count, path + "geojson.geojson")
+        
     def init_drones(self, num):
         """
         Create a number of drones and add them to the list of free drones

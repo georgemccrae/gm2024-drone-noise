@@ -17,15 +17,21 @@ PRIORITIZE_K = 0
 PRIORITIZE_P = 5
 
 # Coordinates of warehouses
-WAREHOUSES = [[37.805858377440266, -122.41276123169143],
-              [37.76077744044274, -122.390011845567],
-              [37.7426674419608, -122.39981393102507]]
-# WAREHOUSES = [[51.5554, -0.1942],  # Northwest: Hampstead
-#               [51.5469, -0.0574],  # Northeast: Hackney
-#               [51.4656, -0.1406],  # Southwest: Clapham
-#               [51.4761, -0.0035]]  # Southeast: Greenwich
+# WAREHOUSES = [[37.805858377440266, -122.41276123169143],
+#               [37.76077744044274, -122.390011845567],
+#               [37.7426674419608, -122.39981393102507]]
+# WAREHOUSES = [
+#     [51.30, -0.10],  # West London
+#     [51.30, -0.05],  # East London
+#     [51.35, -0.15],  # North London
+#     [51.25, -0.10]   # South London
+# ]
+WAREHOUSES = [
+    [51.30, -0.05]  # East London
+]
+
 # Total number of orders (5000 predefined orders)
-ORDERS = 100
+ORDERS = 8
 # Total number of drones
 DRONES = 4
 # Noise matrix cell size (in meter)
@@ -66,16 +72,23 @@ RESULT_BASE_PATH = 'recourses/results/experiments'
 # Map
 CRS = 'epsg:3857'
 # Map boundary
-MAP_LEFT   = -122.520 + 0.004
-MAP_RIGHT  = -122.375 + 0.020
-MAP_TOP    =   37.820 - 0.005
-MAP_BOTTOM =   37.700 + 0.003
+# MAP_LEFT   = -122.520 + 0.004
+# MAP_RIGHT  = -122.375 + 0.020
+# MAP_TOP    =   37.820 - 0.005
+# MAP_BOTTOM =   37.700 + 0.003
+
+MAP_LEFT = -0.5153751 + (122.547 * 0.00001139387)  # Adjusted left longitude
+MAP_RIGHT = 0.3390155 + (122.547 * 0.00001139387)  # Adjusted right longitude
+MAP_TOP = 51.2967602 - (13.7325 * 0.00000900901)  # Adjusted top latitude
+MAP_BOTTOM = 51.2767602 + (13.7325 * 0.00000900901)  # Adjusted bottom latitude
 # offset range 0-200m (latitude) to a random generated coordinate
 # Notice this is calculated at around 37 latitude
-RANDOM_LA_COORD_OFFSET = 0.001802
+#RANDOM_LA_COORD_OFFSET = 0.001802
+RANDOM_LA_COORD_OFFSET = 0
 # Notice this is calculated at around 37 latitude
 # offset range 0-200m (longitude) to a random generated coordinate
-RANDOM_LO_COORD_OFFSET = 0.002278
+#RANDOM_LO_COORD_OFFSET = 0.002278
+RANDOM_LO_COORD_OFFSET = 0
 
 # geo popup layer style and highlight functions
 style_function = lambda x: {'fillColor': '#ffffff',

@@ -1,3 +1,6 @@
+import sys
+sys.path.append('/Users/georgemccrae/Desktop/icra2023-drone-noise-BG/src/commons')
+print(sys.path)
 from commons.decorators import auto_str
 from commons.configuration import USE_POPULATION_DENSITY
 from commons.configuration import NOISE_CELL_LENGTH, NOISE_CELL_WIDTH
@@ -13,7 +16,6 @@ import geopandas as gpd
 from shapely.geometry import Point
 import json
 
-
 @auto_str
 class Cell:
     def __init__(self, latitude, longitude, row, col):
@@ -25,15 +27,8 @@ class Cell:
         self.population_density = 1
     
     def receive_noise(self, noise):
-        """
-        Cell receives a mixed matrix and update its total and maximum matrix.
-        
-        :param noise: a mixed matrix
-        :return:
-        """
         self.total_noise += noise
         self.max_noise = max(self.max_noise, noise)
-        
         
 @auto_str
 class DensityMatrix:
@@ -54,13 +49,11 @@ class DensityMatrix:
                         for j in range(self.cols)] for i in range(self.rows)]
         if USE_POPULATION_DENSITY:
             self.load_pd()
-            # TODO: how to use population density ...
 
     def load_pd(self):
         print("Loading population density data to the matrix...")
         geo = gpd.read_file(GEO_PATH)
         pd_data = pd.read_csv(PD_PATH)
-        # TODO: normalize population density first
         geo_pd_merged = geo.merge(pd_data, left_on="id2", right_on="tract")
         polys_geometry = geo_pd_merged.explode(index_parts=True, column='geometry')
         for i in range(self.rows):
@@ -95,39 +88,21 @@ class DensityMatrix:
     def get_cell(self, coordinate: Coordinate):
         lon = coordinate.longitude
         lat = coordinate.latitude
-
-        if lon < MAP_LEFT:
-            lon = MAP_LEFT
-        elif lon > MAP_RIGHT:
-            lon = MAP_RIGHT
-
-        if lat < MAP_BOTTOM:
-            lat = MAP_BOTTOM
-        elif lat > MAP_TOP:
-            lat = MAP_TOP
-
-        row = math.floor(abs(lat - self.top) / (self.cell_width_m * M_2_LATITUDE))
-        col = math.floor(abs(lon - self.left) / (self.cell_length_m * M_2_LONGITUDE))
-
-        return self.matrix[row][col]
+        if self.is_valid(lon, lat) is False:
+            print(f"WARNING: No cell is found at (lon:{lon}, lat:{lat})")
+            return None
+        else:
+            row = math.floor(abs(lat - self.top) / (self.cell_width_m * M_2_LATITUDE))
+            col = math.floor(abs(lon - self.left) / (self.cell_length_m * M_2_LONGITUDE))
+            return self.matrix[row][col]
     
     def track_noise(self, drones):
-        """
-        The matrix tracks all drones' matrix and record them to the matrix.
-        
-        :param drones: a list of working drones
-        :return:
-        """
         for i in range(self.rows):
             for j in range(self.cols):
                 cell = self.matrix[i][j]
                 noises = []
                 for drone in drones:
                     lat_dist, lon_dist, line_dist = distance(cell.centroid, drone.location)
-                    #if line_dist == 0:
-                    #    noise = drone.NOISE
-                    #else:
-                    #    noise = calculate_noise_coord(x_dist=lon_dist, y_dist=lat_dist, central_noise=drone.NOISE)
                     noise = calculate_noise_coord(x_dist=lon_dist, y_dist=lat_dist, central_noise=drone.NOISE)
                     noises.append(noise)
                 mixed_noise = multi_source_sound_level(noises)
@@ -135,33 +110,36 @@ class DensityMatrix:
     
     def calculate_std(self, time_count):
         return np.std(self.get_average_matrix(time_count))
-    
-    
 
-    def create_geojson(self, time_count, output_file):
-        geojson_data = {
-            "type": "FeatureCollection",
-            "features": []
-        }
-
-        for i in range(self.rows):
-            for j in range(self.cols):
-                cell = self.matrix[i][j]
-                feature = {
-                    "type": "Feature",
-                    "geometry": {
-                        "type": "Point",
-                        "coordinates": [cell.centroid.longitude, cell.centroid.latitude]
-                    },
-                    "properties": {
-                        "average_noise": cell.total_noise / time_count,
-                        "max_noise": cell.max_noise,
-                        "population_density": cell.population_density
-                    }
+def create_geojson_file(density_matrix, file_name):
+    features = []
+    for i in range(density_matrix.rows):
+        for j in range(density_matrix.cols):
+            cell = density_matrix.matrix[i][j]
+            feature = {
+                "type": "Feature",
+                "geometry": {
+                    "type": "Point",
+                    "coordinates": [cell.centroid.longitude, cell.centroid.latitude]
+                },
+                "properties": {
+                    "Total_Noise": cell.total_noise,
+                    "Max_Noise": cell.max_noise,
+                    "Population_Density": cell.population_density
                 }
-                geojson_data["features"].append(feature)
-        
-        with open(output_file, 'w') as file:
-            json.dump(geojson_data, file)
-        
-        print(f"GeoJSON file saved successfully: {output_file}")
+            }
+            features.append(feature)
+    
+    geojson_data = {
+        "type": "FeatureCollection",
+        "name": file_name,
+        "features": features
+    }
+    
+    with open(f"{file_name}.geojson", "w") as f:
+        json.dump(geojson_data, f, indent=4)
+
+if __name__ == "__main__":
+    density_matrix = DensityMatrix()
+    # Assuming 'example_geojson' as the file name, feel free to change it
+    create_geojson_file(density_matrix, "/Users/georgemccrae/Desktop/geojson_test.geojson")
